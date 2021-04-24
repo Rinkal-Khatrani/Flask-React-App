@@ -49,7 +49,6 @@ const UserLogin = () => {
             setError(res.message);
             return
           }
-          //auth.login(res.userid,res.token, res.exp);
 
           localStorage.setItem('token', JSON.stringify({
             userName: res.userName,
@@ -61,7 +60,8 @@ const UserLogin = () => {
             auth.token = res.token;
             auth.userName = res.userName;
             auth.expiration = res.exp;
-            history.push("/welcome");
+            auth.login(auth.token,auth.userName)
+            history.push("/welcome?token="+res.token);
           }
         })
 

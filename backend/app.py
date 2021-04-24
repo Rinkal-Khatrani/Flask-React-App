@@ -1,9 +1,8 @@
 import flask
-from flask import Flask,jsonify,request,make_response,redirect
+from flask import Flask,jsonify,request,make_response
 from flask_sqlalchemy import SQLAlchemy
 from flask_praetorian import Praetorian
 from werkzeug.security import generate_password_hash, check_password_hash
-import uuid
 import jwt
 import datetime
 from functools import wraps
@@ -20,19 +19,19 @@ db = SQLAlchemy(app)
 def token_required(f):
     @wraps(f)
     def decorated(*args,**kwargs):
-        token=flask.request.get_json(force=True)
+        token=flask.request.args.get('token')
         """ if 'x-access-tokens' in request.headers:
             token = request.headers['x-access-tokens']
             print("decoded",jwt.decode(token, app.config['SECRET_KEY'], algorithms=["HS256"], options={"require": ["exp"]})) """
 
         if not token:
-            return jsonify({'message':'Token is missing!'}),403
+            return make_response(jsonify({'message':'Token is missing!!'}), 403, {'WWW.Authentication': 'Basic realm:"Token is missing"'})    
         
         try:
             data=jwt.decode(token, app.config['SECRET_KEY'], algorithms=["HS256"], options={"require": ["exp"]})
             
         except:
-            return jsonify({'message':'Token is invalid!!','token':token}),403
+            return make_response(jsonify({'message':'Token is invalid,Please Login Again'}), 403, {'WWW.Authentication': 'Basic realm:"Token is invalid"'})    
         return f(*args,**kwargs)
     return decorated
 
@@ -50,11 +49,14 @@ class User(db.Model):
         return f"{self.email}-{self.password}"
 
 
-@app.route('/welcome',methods=['POST','GET'])
+@app.route('/welcome',methods=['GET'])
 @token_required
 def welcome():
     return make_response(jsonify({'message':'Token is valid'}), 201, {'WWW.Authentication': 'Basic realm:"Token is valid"'})    
 
+@app.route('/')
+def hello_world():
+    return app.send_static_file('index.html')
 
 @app.route('/login',methods=['POST','GET'])
 def login():
@@ -71,7 +73,7 @@ def login():
 
     
     if check_password_hash(user.password,password):  
-        token=jwt.encode({'email':email,'exp':datetime.datetime.utcnow()+datetime.timedelta(minutes=1)},app.config['SECRET_KEY'],algorithm="HS256")
+        token=jwt.encode({'email':email,'exp':datetime.datetime.utcnow()+datetime.timedelta(minutes=5)},app.config['SECRET_KEY'],algorithm="HS256")
         return make_response(jsonify({'token':token,'exp':5,'userName':user.firstname+' '+user.lastname}), 201, {'WWW.Authentication': 'Basic realm: "login  Successfully!!"'})   
     return make_response(jsonify({'message':'User is Not Authorized!!'}), 401, {'WWW.Authentication': 'Basic realm: "login required"'})    
 
@@ -100,5 +102,5 @@ def register():
  
 
 if(__name__)=="__main__":
-    app.run(debug=True)
+    app.run()
 

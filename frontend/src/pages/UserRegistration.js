@@ -38,6 +38,26 @@ const UserRegistration = () => {
       setError("All Fields are required for login!!");
       return;
     }
+    if (phno !== "undefined") {
+
+         
+
+      var pattern = new RegExp(/^[0-9\b]+$/);
+    
+      if (!pattern.test(phno)) {
+    
+    
+       setError("Please enter only number as a Phone Number.");
+       return
+    
+      }else if(phno.length != 10){
+    
+    
+        setError("Please enter valid phone number.");
+        return
+      }
+    
+    }
     console.log(formdata)
     try {
       fetch('/registration', {
@@ -56,11 +76,20 @@ const UserRegistration = () => {
           return
           
         }
-            auth.token = res.token;
-            auth.userName =res.userName;
-            auth.login(res.token, res.userid, res.userName);
-            history.push("/welcome");
-
+        localStorage.setItem('token', JSON.stringify({
+          userName: res.userName,
+          token: res.token,
+          expiration: res.exp
+        }))
+        const data = JSON.parse(localStorage.getItem('token'))
+        if (data !== null) {
+          auth.token = res.token;
+          auth.userName = res.userName;
+          auth.expiration = res.exp;
+          auth.login(auth.token,auth.userName)
+            history.push("/welcome?token="+res.token);
+        }
+         
        
       })
       
@@ -106,7 +135,7 @@ const UserRegistration = () => {
       </div>
       <div className="form-control">
         <label htmlFor="phno">Phone Number</label>
-        <input type="tel" name="phno"  onInput={inputHandler} maxLength="10" minlength="10"
+        <input type="tel" name="phno"  onInput={inputHandler} 
          value={formdata.phno} ref={iphno} required/>
       </div>
       <div className="form-actions">

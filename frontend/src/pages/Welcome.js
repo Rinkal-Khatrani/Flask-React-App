@@ -4,33 +4,38 @@ import AuthContext from '../context/AuthContext'
 
 const Welcome = () => {
     const auth=useContext(AuthContext)
-    const storedData = JSON.parse(localStorage.getItem('token'));
+    const history=useHistory();
+    let status
+    const [message,setMessage]=useState();
   
     useEffect(()=>{
         try{
-            fetch("/welcome", {
-                method: "post",
-        
-                body: JSON.stringify(auth.token),
+            fetch("/welcome?token="+auth.token)
+              .then(r=>{
+                status=r.status  
+               return r.json()
+            })
+              .then(res=>{
+                  console.log(status);
+               
+                setMessage(res.message)
 
               })
-              .then(r=>r.json())
-              .then(res=>console.log(res.message))
 
         }catch(err){}
-    },[])
+
+        return ()=>{
+            if(status!==201 || status!==200){
+                history.push('/login')}
+        }
+    },[status])
 
     return (
         <>
-            {/* {valid && (
-                <div style={{marginTop: '3.5rem'}}>
-                <h1>Welcome {auth.userName}</h1>
-                </div>
-                
-            )}  */}
 
 <div style={{marginTop: '3.5rem'}}>
-                <h1>Welcome {storedData.userName}</h1>
+            <h2>{auth.userName}</h2>
+                <h1>{message}</h1>
                 </div>
          </>
     );
